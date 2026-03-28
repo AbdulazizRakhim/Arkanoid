@@ -11,8 +11,9 @@
 
 typedef struct {
 
-	int x, y;
-	int width;
+	int	x;
+	int	y;
+	int	width;
 
 }TRacket;
 

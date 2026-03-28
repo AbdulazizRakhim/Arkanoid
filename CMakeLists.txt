@@ -1,12 +1,17 @@
-﻿# CMakeList.txt : Top-level CMake project file, do global configuration
-# and include sub-projects here.
-#
-cmake_minimum_required (VERSION 3.10)
+﻿cmake_minimum_required(VERSION 3.10)
+project(Arkanoid LANGUAGES C)
 
-set(CMAKE_C_STANDARD 23)
+#
+set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-project ("New Arkanoid" LANGUAGES C)
+#
+add_executable(Arkanoid src/main.c)
 
-# Include sub-projects.
-add_subdirectory ("New Arkanoid")
+#
+target_include_directories(Arkanoid PRIVATE include)
+
+#
+if(WIN32)
+	target_link_libraries(Arkanoid user32 gdi32)
+endif()

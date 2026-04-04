@@ -32,13 +32,11 @@ TRacket racket;
 TBall ball;
 int hit_counter = 0;
 int max_counter = 0;
-int console_columns = 0;
-int console_rows = 0;
-int offset_x = 0;
-int offset_y = 0;
+int level = 1;
+int level_needed = 10;
 
 void move_ball(float x, float y);
-
+void show_preview(int level);
 
 int is_inside(int x, int y)
 {
@@ -68,9 +66,9 @@ void move_ball(float x, float y)
 
 void flying_ball()
 {
-	while (ball.angle < 0)
+	if (ball.angle < 0)
 		ball.angle = ball.angle + M_PI * 2;
-	while (ball.angle > M_PI * 2)
+	if (ball.angle > M_PI * 2)
 		ball.angle = ball.angle - M_PI * 2;
 
 	TBall copy_ball = ball;
@@ -81,7 +79,15 @@ void flying_ball()
 	if ((map[ball.iy][ball.ix] == '#') || (map[ball.iy][ball.ix] == '@'))
 	{
 		if (map[ball.iy][ball.ix] == '@')
-			hit_counter++; 
+		{
+			hit_counter++;
+			if (hit_counter >= level_needed)
+			{
+				level++;
+				hit_counter = 0;
+				show_preview(level);
+			}
+		}
 
 		if ((ball.ix != copy_ball.ix) && (ball.iy != copy_ball.iy))
 		{
@@ -101,7 +107,7 @@ void flying_ball()
 			copy_ball.angle = (2 * M_PI - copy_ball.angle);
 		
 		ball = copy_ball;
-		flying_ball();
+	
 	}
 
 }
@@ -120,8 +126,9 @@ void put_racket()
 		map[racket.y][i] = '@';
 }
 
-void create_map()
+void create_map(int lvl)
 {
+
 	for (int i = 0; i < WIDTH; i++)
 		map[0][i] = '#';
 
@@ -134,6 +141,22 @@ void create_map()
 	for (int i = 2; i < HEIGHT; i++)
 		strncpy(map[i], map[1], WIDTH + 1);
 
+	if(lvl == 1)
+		for (int i = 20; i < 50; i++)
+			map[10][i] = '#';
+	else if (lvl == 2)
+	{
+		for (int i = 4; i < 10; i+=5)
+			for (int j = 20; j < 50; j++)
+				map[i][j] = '#';			
+	}
+	else if (lvl == 3)
+	{
+		for (int i = 10; i < 60; i += 9)
+			for (int j = 3; j <= 15; j++)
+				map[j][i] = '#';
+	}
+
 }
 
 void show_map(BOOL debug_overlay)
@@ -144,24 +167,24 @@ void show_map(BOOL debug_overlay)
 
 		if (i == 3)
 			printf("    Hits  %-5d", hit_counter);
-		else if (i == 5)
+		if (i == 5)
 			printf("    Score %-5d", max_counter);
 
-		else if (debug_overlay)
+		if (debug_overlay)
 		{
 			if (i == 8)
 				printf("    | Angle: %-8.2f", ball.angle);
 			else if (i == 10)
-				printf("    | cos (%-3.2f): %-8.3f", ball.angle, cos(ball.angle));
+				printf("    | cos ( %-5.2f): %-8.3f", ball.angle, cos(ball.angle));
 			else if (i == 12)
-				printf("    | sin (%-3.2f): %-8.3f", ball.angle, sin(ball.angle));
+				printf("    | sin ( %-5.2f): %-8.3f", ball.angle, sin(ball.angle));
 			else if (i == 14)
 				printf("    | Ball position: [X = %-2d, Y = %-2d]", ball.ix, ball.iy);
 		}
 		else
 		{
-			if(i >= 8 && i <= 14)
-				printf("%-40s", "");
+			if (i == 8 || i == 10 || i == 12 || i == 14)
+				printf("%-45s", "");
 		}
 
 		if (i < HEIGHT - 1)
@@ -201,9 +224,26 @@ void hide_cursor()
 	CONSOLE_CURSOR_INFO ci = { 100, FALSE };
 	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &ci);
 }
+//
+
+void show_preview(int level)
+{
+	system("cls");
+	hide_cursor();
+	if (level == 1)
+		printf("\n\n\n\n\n\n\n\n\t\t\t\t\t\tArkanoid game\n");
+	else if (level > 1)
+		printf("\n\n\n\n\n\n\n\n\t\t\t\t\t\t\n");
+
+	printf("\n\n\t\t\t\t\t\t   LEVEL %d", level);
+	Sleep(2000); // 2 sec 
+	system("cls");
+}
 
 int main(int argc, char* argv[])
 {
+	show_preview(level);
+
 	BOOL run = FALSE;
 	BOOL debug_overlay = FALSE;
 	BOOL was_pressed = FALSE;
@@ -223,7 +263,7 @@ int main(int argc, char* argv[])
 		{
 			run = FALSE;
 
-			if (hit_counter > max_counter)
+			 if (hit_counter > max_counter)
 				max_counter = hit_counter;
 
 			hit_counter = 0;
@@ -236,7 +276,7 @@ int main(int argc, char* argv[])
 		
 		was_pressed = is_pressed;
 
-		create_map();
+		create_map(level);
 
 		put_racket();
 		put_ball();
@@ -254,7 +294,7 @@ int main(int argc, char* argv[])
 		move_ball(racket.x + racket.width / 2, racket.y - 1); // place the ball on the center of racket
 		//			29	   +     7		  / 2,    24    - 1
 		
-		Sleep(1);
+		Sleep(5);
 
 	} while (GetKeyState(VK_ESCAPE) >= 0);
 

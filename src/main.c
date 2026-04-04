@@ -13,20 +13,18 @@
 
 typedef struct {
 
-	int	x;
-	int	y;
+	int	x, y;
 	int	width;
 
 }TRacket;
 
 typedef struct {
 	
-	float x;
-	float y;
-	int ix;
-	int iy;
+	float x, y;
+	int ix, iy;
 	float angle;
 	float speed;
+
 }TBall;
 
 char map[HEIGHT][WIDTH + 1];	// '\0' for each line for HEIGHT
@@ -34,19 +32,30 @@ TRacket racket;
 TBall ball;
 int hit_counter = 0;
 int max_counter = 0;
+int console_columns = 0;
+int console_rows = 0;
+int offset_x = 0;
+int offset_y = 0;
 
 void move_ball(float x, float y);
+
+
+int is_inside(int x, int y)
+{
+	return (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT);
+}
 
 void create_ball()
 {
 	move_ball(2, 2);
 	ball.angle = -1;
-	ball.speed = 0.5;
+	ball.speed = 0.6;
 }
 
 void put_ball()
 {
-	map[ball.iy][ball.ix] = '*';
+	if(is_inside(ball.ix,ball.iy)) // safe borders
+		map[ball.iy][ball.ix] = '*';
 }
 
 void move_ball(float x, float y)
@@ -59,9 +68,9 @@ void move_ball(float x, float y)
 
 void flying_ball()
 {
-	if (ball.angle < 0)
+	while (ball.angle < 0)
 		ball.angle = ball.angle + M_PI * 2;
-	else if (ball.angle > M_PI * 2)
+	while (ball.angle > M_PI * 2)
 		ball.angle = ball.angle - M_PI * 2;
 
 	TBall copy_ball = ball;
@@ -127,7 +136,7 @@ void create_map()
 
 }
 
-void show_map()
+void show_map(BOOL debug_overlay)
 {
 	for (int i = 0; i < HEIGHT; i++)
 	{
@@ -137,20 +146,29 @@ void show_map()
 			printf("    Hits  %-5d", hit_counter);
 		else if (i == 5)
 			printf("    Score %-5d", max_counter);
-		else if (i == 8)
-			printf("    | Angle: %-8.2f", ball.angle);
-		else if (i == 10)
-			printf("    | cos (%-3.2f): %-8.3f", ball.angle, cos(ball.angle));
-		else if (i == 12)
-			printf("    | sin (%-3.2f): %-8.3f", ball.angle, sin(ball.angle));
-		else if (i == 14)
-			printf("    | Ball position: [X = %-2d, Y = %-2d]", ball.ix, ball.iy);
-		
+
+		else if (debug_overlay)
+		{
+			if (i == 8)
+				printf("    | Angle: %-8.2f", ball.angle);
+			else if (i == 10)
+				printf("    | cos (%-3.2f): %-8.3f", ball.angle, cos(ball.angle));
+			else if (i == 12)
+				printf("    | sin (%-3.2f): %-8.3f", ball.angle, sin(ball.angle));
+			else if (i == 14)
+				printf("    | Ball position: [X = %-2d, Y = %-2d]", ball.ix, ball.iy);
+		}
+		else
+		{
+			if(i >= 8 && i <= 14)
+				printf("%-40s", "");
+		}
+
 		if (i < HEIGHT - 1)
 			printf("\n");
 	}
 
-	printf("\n\n\n\nPress X for Debug Overlay: ");
+	printf("\n\n\n\nPress X to Toggle Debug Overlay: ");
 }
 
 void move_racket(int x)
@@ -165,6 +183,8 @@ void move_racket(int x)
 		racket.x = WIDTH - 1 - racket.width;
 
 }
+
+//winapi32 functions
 
 void set_cursor(int x, int y)
 {
@@ -185,6 +205,8 @@ void hide_cursor()
 int main(int argc, char* argv[])
 {
 	BOOL run = FALSE;
+	BOOL debug_overlay = FALSE;
+	BOOL was_pressed = FALSE;
 
 	hide_cursor();
 	create_racket();
@@ -197,7 +219,7 @@ int main(int argc, char* argv[])
 		if (run)
 			flying_ball();
 
-		if (ball.iy > HEIGHT)
+		if (ball.iy > HEIGHT - 1)
 		{
 			run = FALSE;
 
@@ -207,12 +229,19 @@ int main(int argc, char* argv[])
 			hit_counter = 0;
 		}
 
+		BOOL is_pressed = (GetKeyState('X') < 0);
+
+		if (is_pressed && !was_pressed)
+			debug_overlay = !debug_overlay;
+		
+		was_pressed = is_pressed;
+
 		create_map();
 
 		put_racket();
 		put_ball();
 
-		show_map();
+		show_map(debug_overlay);
 
 		if (GetKeyState('A') < 0)
 			move_racket(racket.x - 1);

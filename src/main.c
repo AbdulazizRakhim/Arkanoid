@@ -277,6 +277,7 @@ void show_preview(int level)
 int main(int argc, char* argv[])
 {
 	show_preview(level);
+	SetConsoleOutputCP(437);
 
 	BOOL run = FALSE;
 	BOOL debug_overlay = FALSE;
@@ -328,7 +329,7 @@ int main(int argc, char* argv[])
 		move_ball(racket.x + racket.width / 2, racket.y - 1); // place the ball on the center of racket
 		//			29	   +     7		  / 2,    24    - 1
 		
-		Sleep(5);
+		Sleep(10);
 
 	} while (GetKeyState(VK_ESCAPE) >= 0);
 

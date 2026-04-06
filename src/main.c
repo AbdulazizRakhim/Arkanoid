@@ -11,14 +11,18 @@
 #define WIDTH 65
 #define HEIGHT 25
 
-typedef struct {
+#define WALL 177 // replace from 176 to 178 for polishing wall
+#define RACKET 205
+#define BALL 111
+
+typedef struct TRacket{
 
 	int	x, y;
 	int	width;
 
 }TRacket;
 
-typedef struct {
+typedef struct TBall{
 	
 	float x, y;
 	int ix, iy;
@@ -27,13 +31,14 @@ typedef struct {
 
 }TBall;
 
-char map[HEIGHT][WIDTH + 1];	// '\0' for each line for HEIGHT
+unsigned char map[HEIGHT][WIDTH + 1];	// '\0' for each line for HEIGHT
 TRacket racket;
 TBall ball;
+TBall copy_ball;
 int hit_counter = 0;
 int max_counter = 0;
 int level = 1;
-int level_needed = 10;
+int level_needed = 5;
 
 void move_ball(float x, float y);
 void show_preview(int level);
@@ -43,17 +48,31 @@ int is_inside(int x, int y)
 	return (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT);
 }
 
+unsigned char get_map(int x, int y)
+{
+	if (x < 0 || x >= WIDTH)
+		return WALL;
+
+	if (y < 0)
+		return WALL;
+
+	if (y >= HEIGHT)
+		return ' ';
+
+	return map[y][x];
+}
+
 void create_ball()
 {
 	move_ball(2, 2);
 	ball.angle = -1;
-	ball.speed = 0.6;
+	ball.speed = 0.5;
 }
 
 void put_ball()
 {
 	if(is_inside(ball.ix,ball.iy)) // safe borders
-		map[ball.iy][ball.ix] = '*';
+		map[ball.iy][ball.ix] = BALL;
 }
 
 void move_ball(float x, float y)
@@ -71,14 +90,17 @@ void flying_ball()
 	if (ball.angle > M_PI * 2)
 		ball.angle = ball.angle - M_PI * 2;
 
-	TBall copy_ball = ball;
+	copy_ball = ball;
 
 	move_ball(ball.x + cos(ball.angle) * ball.speed,
 		      ball.y + sin(ball.angle) * ball.speed);
 	
-	if ((map[ball.iy][ball.ix] == '#') || (map[ball.iy][ball.ix] == '@'))
+	// changing direction based on quadrants 
+
+	if ( (get_map(ball.ix, ball.iy) == WALL) || (get_map(ball.ix, ball.iy) == RACKET))
 	{
-		if (map[ball.iy][ball.ix] == '@')
+
+		if (get_map(ball.ix, ball.iy) == RACKET)
 		{
 			hit_counter++;
 			if (hit_counter >= level_needed)
@@ -91,23 +113,30 @@ void flying_ball()
 
 		if ((ball.ix != copy_ball.ix) && (ball.iy != copy_ball.iy))
 		{
-			if (map[copy_ball.iy][copy_ball.ix] == map[ball.iy][ball.ix])
+			unsigned char probe_x = get_map(ball.ix, copy_ball.iy); 
+
+			unsigned char probe_y = get_map(copy_ball.ix, ball.iy);
+
+			if ((probe_x == WALL || probe_x == RACKET) && (probe_y == WALL || probe_y == RACKET))
 				copy_ball.angle = copy_ball.angle + M_PI;
+
+			else if (probe_x == WALL || probe_x == RACKET)
+				copy_ball.angle = (2 * M_PI - copy_ball.angle) + M_PI;
+
+			else if (probe_y == WALL || probe_y == RACKET)
+				copy_ball.angle = (2 * M_PI - copy_ball.angle);
+
 			else
-			{
-				if(map[copy_ball.iy][ball.ix] == '#')
-					copy_ball.angle = (2 * M_PI - copy_ball.angle) + M_PI;
-				else
-					copy_ball.angle = (2 * M_PI - copy_ball.angle);
-			}
+				copy_ball.angle = copy_ball.angle + (float)M_PI;
+		
 		}
-		else if (ball.iy == copy_ball.iy)
+		else if (ball.iy == copy_ball.iy) // if both .iy positions stay same, change opposite 
 			copy_ball.angle = (2 * M_PI - copy_ball.angle) + M_PI;
+
 		else
-			copy_ball.angle = (2 * M_PI - copy_ball.angle);
+			copy_ball.angle = (2 * M_PI - copy_ball.angle); // changing only vertical position
 		
 		ball = copy_ball;
-	
 	}
 
 }
@@ -123,14 +152,14 @@ void create_racket()
 void put_racket()
 {
 	for (int i = racket.x; i < racket.x + racket.width; i++)
-		map[racket.y][i] = '@';
+		map[racket.y][i] = RACKET; 
 }
 
 void create_map(int lvl)
 {
 
 	for (int i = 0; i < WIDTH; i++)
-		map[0][i] = '#';
+		map[0][i] = WALL; 
 
 	map[0][WIDTH] = '\0';
 
@@ -141,26 +170,28 @@ void create_map(int lvl)
 	for (int i = 2; i < HEIGHT; i++)
 		strncpy(map[i], map[1], WIDTH + 1);
 
-	if(lvl == 1)
+	if (lvl == 1)
 		for (int i = 20; i < 50; i++)
-			map[10][i] = '#';
+			map[10][i] = WALL; 
 	else if (lvl == 2)
 	{
-		for (int i = 4; i < 10; i+=5)
+		for (int i = 4; i < 10; i += 5)
 			for (int j = 20; j < 50; j++)
-				map[i][j] = '#';			
+				map[i][j] = WALL; 
 	}
 	else if (lvl == 3)
 	{
 		for (int i = 10; i < 60; i += 9)
 			for (int j = 3; j <= 15; j++)
-				map[j][i] = '#';
+				map[j][i] = WALL; 
 	}
+
 
 }
 
 void show_map(BOOL debug_overlay)
 {
+
 	for (int i = 0; i < HEIGHT; i++)
 	{
 		printf("%s", map[i]);
@@ -180,11 +211,13 @@ void show_map(BOOL debug_overlay)
 				printf("    | sin ( %-5.2f): %-8.3f", ball.angle, sin(ball.angle));
 			else if (i == 14)
 				printf("    | Ball position: [X = %-2d, Y = %-2d]", ball.ix, ball.iy);
+			else if (i == 16)
+				printf("    | Ball copy:     [X = %-2d, Y = %-2d]", copy_ball.ix, copy_ball.iy);
 		}
 		else
 		{
-			if (i == 8 || i == 10 || i == 12 || i == 14)
-				printf("%-45s", "");
+			if (i == 8 || i == 10 || i == 12 || i == 14 || i == 16)
+				printf("%-55s", "");
 		}
 
 		if (i < HEIGHT - 1)
@@ -224,6 +257,7 @@ void hide_cursor()
 	CONSOLE_CURSOR_INFO ci = { 100, FALSE };
 	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &ci);
 }
+
 //
 
 void show_preview(int level)

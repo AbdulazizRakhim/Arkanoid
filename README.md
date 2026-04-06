@@ -21,20 +21,24 @@ A console-based Arkanoid game written in C to explore low-level game mechanics a
 
 ## Build & Run (Windows)
 
-Make sure you have CMake and a C compiler (e.g. Visual Studio) installed.
+Make sure you have Git, CMake and a C compiler (e.g. Visual Studio) installed.
 
-```bash
+> Use **Developer PowerShell for VS** to ensure all tools are in your PATH
+
+1. **Clone the repository:**
+```powershell
 git clone https://github.com/AbdulazizRakhim/Arkanoid
 cd Arkanoid
-mkdir build
-cd build
-cmake ..
-cmake --build .
 ```
-Run the game:
+2. **Build the project:**
+```powershell
+cmake -B build
+cmake --build build --config Release
+```
 
-```bash
-.\Arkanoid.exe
+3. **Run the game:**
+```powershell
+.\build\Release\Arkanoid.exe
 ```
 
 # Controls

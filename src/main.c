@@ -38,7 +38,7 @@ TBall copy_ball;
 int hit_counter = 0;
 int max_counter = 0;
 int level = 1;
-int level_needed = 5;
+int level_needed = 6;
 
 void move_ball(float x, float y);
 void show_preview(int level);
@@ -66,7 +66,7 @@ void create_ball()
 {
 	move_ball(2, 2);
 	ball.angle = -1;
-	ball.speed = 0.5;
+	ball.speed = 0.6;
 }
 
 void put_ball()
@@ -85,6 +85,7 @@ void move_ball(float x, float y)
 
 void flying_ball()
 {
+	// keep the radians in circle
 	if (ball.angle < 0)
 		ball.angle = ball.angle + M_PI * 2;
 	if (ball.angle > M_PI * 2)
@@ -95,7 +96,7 @@ void flying_ball()
 	move_ball(ball.x + cos(ball.angle) * ball.speed,
 		      ball.y + sin(ball.angle) * ball.speed);
 	
-	// changing direction based on quadrants 
+	// changing direction based on quadrants and radians
 
 	if ( (get_map(ball.ix, ball.iy) == WALL) || (get_map(ball.ix, ball.iy) == RACKET))
 	{
@@ -107,36 +108,46 @@ void flying_ball()
 			{
 				level++;
 				hit_counter = 0;
+				printf("\a");
 				show_preview(level);
 			}
 		}
 
+		// each frame might have different positions  
 		if ((ball.ix != copy_ball.ix) && (ball.iy != copy_ball.iy))
 		{
 			unsigned char probe_x = get_map(ball.ix, copy_ball.iy); 
-
 			unsigned char probe_y = get_map(copy_ball.ix, ball.iy);
 
+			// if ball gets to corner take the ball back 
 			if ((probe_x == WALL || probe_x == RACKET) && (probe_y == WALL || probe_y == RACKET))
 				copy_ball.angle = copy_ball.angle + M_PI;
-
+			
+			// if ball's x position enters to wall, change its angle
 			else if (probe_x == WALL || probe_x == RACKET)
 				copy_ball.angle = (2 * M_PI - copy_ball.angle) + M_PI;
-
+			
+			// if there is nothing just fly to up or down 
 			else if (probe_y == WALL || probe_y == RACKET)
 				copy_ball.angle = (2 * M_PI - copy_ball.angle);
-
+			
+			// if ball quits the field, take it back to paddle (safely) 
 			else
-				copy_ball.angle = copy_ball.angle + (float)M_PI;
+				copy_ball.angle = copy_ball.angle + M_PI; 				
 		
 		}
 		else if (ball.iy == copy_ball.iy) // if both .iy positions stay same, change opposite 
 			copy_ball.angle = (2 * M_PI - copy_ball.angle) + M_PI;
-
-		else
+		else 
 			copy_ball.angle = (2 * M_PI - copy_ball.angle); // changing only vertical position
 		
-		ball = copy_ball;
+		// keep the radians in circle again (safely)
+		if (ball.angle < 0)
+			ball.angle = ball.angle + M_PI * 2;
+		if (ball.angle > M_PI * 2)
+			ball.angle = ball.angle - M_PI * 2;
+
+		ball = copy_ball; // update its coordination and move the ball
 	}
 
 }
@@ -157,7 +168,7 @@ void put_racket()
 
 void create_map(int lvl)
 {
-
+	
 	for (int i = 0; i < WIDTH; i++)
 		map[0][i] = WALL; 
 
@@ -172,20 +183,21 @@ void create_map(int lvl)
 
 	if (lvl == 1)
 		for (int i = 20; i < 50; i++)
-			map[10][i] = WALL; 
+			map[10][i] = WALL;
 	else if (lvl == 2)
 	{
 		for (int i = 4; i < 10; i += 5)
 			for (int j = 20; j < 50; j++)
-				map[i][j] = WALL; 
+				map[i][j] = WALL;
 	}
 	else if (lvl == 3)
 	{
 		for (int i = 10; i < 60; i += 9)
 			for (int j = 3; j <= 15; j++)
-				map[j][i] = WALL; 
+				map[j][i] = WALL;
 	}
-
+	else
+		level = 1;
 
 }
 
@@ -264,12 +276,28 @@ void show_preview(int level)
 {
 	system("cls");
 	hide_cursor();
-	if (level == 1)
-		printf("\n\n\n\n\n\n\n\n\t\t\t\t\t\tArkanoid game\n");
+	if (level >= 5)
+	{
+		level = 1;
+		printf("\n\n\n\n\n\n\n\n\t\t\t\t\t\t\n");
+		printf("\n\n\t\t\t\t\t\t   END OF THE GAME\n");
+		
+		Beep(400, 800);
+		Sleep(2000); // 2 sec 
+		system("cls");
+	}
 	else if (level > 1)
 		printf("\n\n\n\n\n\n\n\n\t\t\t\t\t\t\n");
+	if (level == 1)
+	{
+		printf("\n\n\n\n\n\n\n\n\t\t\t\t\t\tArkanoid game\n");
+		Beep(300, 500);
+	}
 
 	printf("\n\n\t\t\t\t\t\t   LEVEL %d", level);
+	
+
+	
 	Sleep(2000); // 2 sec 
 	system("cls");
 }

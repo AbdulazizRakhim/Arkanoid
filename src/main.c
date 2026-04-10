@@ -38,7 +38,7 @@ TBall copy_ball;
 int hit_counter = 0;
 int max_counter = 0;
 int level = 1;
-int level_needed = 6;
+int level_needed = 10;
 
 void move_ball(float x, float y);
 void show_preview(int level);
@@ -100,18 +100,8 @@ void flying_ball()
 
 	if ( (get_map(ball.ix, ball.iy) == WALL) || (get_map(ball.ix, ball.iy) == RACKET))
 	{
-
 		if (get_map(ball.ix, ball.iy) == RACKET)
-		{
 			hit_counter++;
-			if (hit_counter >= level_needed)
-			{
-				level++;
-				hit_counter = 0;
-				printf("\a");
-				show_preview(level);
-			}
-		}
 
 		// each frame might have different positions  
 		if ((ball.ix != copy_ball.ix) && (ball.iy != copy_ball.iy))
@@ -207,11 +197,12 @@ void show_map(BOOL debug_overlay)
 	for (int i = 0; i < HEIGHT; i++)
 	{
 		printf("%s", map[i]);
-
+		if(i == 1)
+			printf("    Level  %-5d", level);
 		if (i == 3)
-			printf("    Hits  %-5d", hit_counter);
+			printf("     Hits  %-5d", hit_counter);
 		if (i == 5)
-			printf("    Score %-5d", max_counter);
+			printf("    Score  %-5d", max_counter);
 
 		if (debug_overlay)
 		{
@@ -236,7 +227,7 @@ void show_map(BOOL debug_overlay)
 			printf("\n");
 	}
 
-	printf("\n\n\n\nPress X to Toggle Debug Overlay: ");
+	printf("\n\n\n\nPress X to Toggle Debug Overlay: \t Press 'r' to restart ball: \t Press 's' to skip the level");
 }
 
 void move_racket(int x)
@@ -276,7 +267,7 @@ void show_preview(int level)
 {
 	system("cls");
 	hide_cursor();
-	if (level >= 5)
+	if (level >= 4)
 	{
 		level = 1;
 		printf("\n\n\n\n\n\n\n\n\t\t\t\t\t\t\n");
@@ -332,6 +323,15 @@ int main(int argc, char* argv[])
 			hit_counter = 0;
 		}
 
+		if (hit_counter >= level_needed)
+		{
+			level++;
+			run = FALSE;
+			max_counter = 0;
+			hit_counter = 0;
+			show_preview(level);
+		}
+
 		BOOL is_pressed = (GetKeyState('X') < 0);
 
 		if (is_pressed && !was_pressed)
@@ -352,6 +352,14 @@ int main(int argc, char* argv[])
 			move_racket(racket.x + 1);
 		else if (GetKeyState('W') < 0)
 			run = TRUE;
+		else if (GetKeyState('R') < 0)
+			run = FALSE;
+		else if (GetKeyState('S') < 0)
+		{
+				level++;
+				run = FALSE;
+				show_preview(level);
+		}
 
 		if(!run)
 		move_ball(racket.x + racket.width / 2, racket.y - 1); // place the ball on the center of racket
